@@ -1,0 +1,24 @@
+{
+  "name": "/app",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "swagger-typescript-api": "^13.2.14"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "build": "bun run src/generate.ts"
+  },
+  "dependencies": {
+    "@hono/swagger-ui": "^0.5.2",
+    "amazon-sp-api": "^1.1.7",
+    "dotenv": "^17.2.3",
+    "hono": "^4.9.10",
+    "pino": "^10.0.0"
+  }
+}
