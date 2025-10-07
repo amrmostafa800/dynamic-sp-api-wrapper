@@ -61,9 +61,6 @@ export const generatedRouters = new Map<string, Hono>();
 // --- Router for ${modelName} ---
 const ${modelName}Router = new Hono();
 `;
-    // Use the model name as the endpoint, but use the original from the directory for the API call
-    const endpointName = spec.info.title.toLowerCase().replace(/ /g, '_').replace(/_api$/, '');
-
     for (const swaggerPath in spec.paths) {
       const pathItem = spec.paths[swaggerPath];
       for (const method in pathItem) {
@@ -81,7 +78,7 @@ ${modelName}Router.${method}('${honoPath}', async (c) => {
       query: c.req.query(),
       body: c.req.header('content-type')?.includes('json') ? await c.req.json() : undefined,
     };
-    const result = await SpApiService.callApi('${endpointName}', '${operationId}', params);
+    const result = await SpApiService.callApi('${modelName}', '${operationId}', params);
     return c.json(result);
   } catch (error: any) {
     console.error('Error in generated route for ${operationId}:', error);
