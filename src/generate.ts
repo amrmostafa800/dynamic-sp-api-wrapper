@@ -36,6 +36,18 @@ function extractRateLimit(description: string): RateLimitInfo | null {
 }
 
 /**
+ * Converts a string from snake_case or kebab-case to camelCase.
+ * e.g., listings_restrictions -> listingsRestrictions
+ */
+function toCamelCase(str: string): string {
+  return str.replace(/([-_][a-z])/ig, ($1) => {
+    return $1.toUpperCase()
+      .replace('-', '')
+      .replace('_', '');
+  });
+}
+
+/**
  * Converts a Swagger/OpenAPI path to a Hono-compatible path.
  * e.g., /orders/v0/orders/{orderId} -> /orders/v0/orders/:orderId
  */
@@ -61,6 +73,8 @@ export const generatedRouters = new Map<string, Hono>();
 // --- Router for ${modelName} ---
 const ${modelName}Router = new Hono();
 `;
+    const camelCaseEndpoint = toCamelCase(modelName);
+
     for (const swaggerPath in spec.paths) {
       const pathItem = spec.paths[swaggerPath];
       for (const method in pathItem) {
@@ -78,7 +92,7 @@ ${modelName}Router.${method}('${honoPath}', async (c) => {
       query: c.req.query(),
       body: c.req.header('content-type')?.includes('json') ? await c.req.json() : undefined,
     };
-    const result = await SpApiService.callApi('${modelName}', '${operationId}', params);
+    const result = await SpApiService.callApi('${camelCaseEndpoint}', '${operationId}', params);
     return c.json(result);
   } catch (error: any) {
     console.error('Error in generated route for ${operationId}:', error);
@@ -123,7 +137,7 @@ async function generate() {
       const swaggerFile = files.find(f => f.endsWith('.json'));
 
       if (swaggerFile) {
-        const modelName = dirName.replace(/-api-model$/, '').replace(/-model$/, '').replace(/-/g, '_');
+        const modelName = dirName.replace(/-api-model$/, '').replace(/-model$/, '');
         console.log(`\nProcessing model: ${modelName}`);
 
         const filePath = path.join(modelPath, swaggerFile);
@@ -132,7 +146,7 @@ async function generate() {
         routerSpecs.push({ modelName, spec });
 
         // 1. Generate Types
-        const typeFileName = `${modelName}.types.ts`;
+        const typeFileName = `${modelName.replace(/-/g, '_')}.types.ts`;
         try {
             await execAsync(
                 `npx swagger-typescript-api generate -p "${filePath}" -o "${TYPES_DIR}" -n "${typeFileName}" --no-client --clean-output`
@@ -146,9 +160,8 @@ async function generate() {
         // 2. Extract Rate Limits, Paths, and Tags
         if (spec.paths) {
           for (const pathKey in spec.paths) {
-            // Add model prefix to path to avoid collisions
-            const newPathKey = `/api/${modelName}${pathKey}`;
-            allPaths[newPathKey] = spec.paths[pathKey];
+            const apiPath = `/api/${modelName.replace(/_/g, '-')}${pathKey}`;
+            allPaths[apiPath] = spec.paths[pathKey];
 
             const pathItem = spec.paths[pathKey];
             for (const method in pathItem) {
