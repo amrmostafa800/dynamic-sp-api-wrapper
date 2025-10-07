@@ -123,7 +123,7 @@ async function generate() {
       const swaggerFile = files.find(f => f.endsWith('.json'));
 
       if (swaggerFile) {
-        const modelName = dirName.replace(/-api-model$/, '').replace(/-/g, '_');
+        const modelName = dirName.replace(/-api-model$/, '').replace(/-model$/, '').replace(/-/g, '_');
         console.log(`\nProcessing model: ${modelName}`);
 
         const filePath = path.join(modelPath, swaggerFile);
