@@ -37,7 +37,7 @@ function extractRateLimit(description: string): RateLimitInfo | null {
 
 /**
  * Converts a string from snake_case or kebab-case to camelCase.
- * e.g., listings_restrictions -> listingsRestrictions
+ * e.g., listings-restrictions -> listingsRestrictions
  */
 function toCamelCase(str: string): string {
   return str.replace(/([-_][a-z])/ig, ($1) => {
@@ -69,11 +69,13 @@ export const generatedRouters = new Map<string, Hono>();
 `;
 
   for (const { modelName, spec } of routerSpecs) {
+    const routerVarName = `${modelName.replace(/-/g, '_')}Router`;
+    const camelCaseEndpoint = toCamelCase(modelName);
+
     content += `
 // --- Router for ${modelName} ---
-const ${modelName}Router = new Hono();
+const ${routerVarName} = new Hono();
 `;
-    const camelCaseEndpoint = toCamelCase(modelName);
 
     for (const swaggerPath in spec.paths) {
       const pathItem = spec.paths[swaggerPath];
@@ -85,7 +87,7 @@ const ${modelName}Router = new Hono();
         if (!operationId) continue;
 
         content += `
-${modelName}Router.${method}('${honoPath}', async (c) => {
+${routerVarName}.${method}('${honoPath}', async (c) => {
   try {
     const params = {
       path: c.req.param(),
@@ -103,7 +105,7 @@ ${modelName}Router.${method}('${honoPath}', async (c) => {
       }
     }
     content += `
-generatedRouters.set('${modelName}', ${modelName}Router);
+generatedRouters.set('${modelName}', ${routerVarName});
 `;
   }
 
@@ -160,7 +162,7 @@ async function generate() {
         // 2. Extract Rate Limits, Paths, and Tags
         if (spec.paths) {
           for (const pathKey in spec.paths) {
-            const apiPath = `/api/${modelName.replace(/_/g, '-')}${pathKey}`;
+            const apiPath = `/api/${modelName}${pathKey}`;
             allPaths[apiPath] = spec.paths[pathKey];
 
             const pathItem = spec.paths[pathKey];
