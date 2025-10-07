@@ -57,11 +57,13 @@ class SpApiServiceImpl {
   /**
    * A generic method to call any SP-API operation.
    * It acquires a rate limit token before making the actual API call.
+   * @param endpoint The SP-API model name (e.g., 'orders').
    * @param operation The ID of the operation to call (e.g., 'getOrders').
    * @param params An object containing path, query, and body parameters.
    * @returns The response from the SP-API.
    */
   public async callApi(
+    endpoint: string,
     operation: string,
     params: {
       path?: Record<string, any>;
@@ -79,6 +81,7 @@ class SpApiServiceImpl {
     };
 
     const res = await this.spApiClient.callAPI({
+      endpoint,
       operation,
       path: params.path,
       query: Object.keys(query).length > 0 ? query : undefined,
