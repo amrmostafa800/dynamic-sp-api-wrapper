@@ -57,6 +57,7 @@ function formatHonoPath(swaggerPath: string): string {
 
 /**
  * Generates the content for the dynamic routers file.
+ * Groups specs by model name to create a single router for each model.
  */
 function createRoutersFileContent(routerSpecs: { modelName: string; spec: any }[]): string {
   let content = `
@@ -68,7 +69,15 @@ import { HTTPException } from 'hono/http-exception';
 export const generatedRouters = new Map<string, Hono>();
 `;
 
+  const groupedSpecs: Record<string, any[]> = {};
   for (const { modelName, spec } of routerSpecs) {
+    if (!groupedSpecs[modelName]) {
+      groupedSpecs[modelName] = [];
+    }
+    groupedSpecs[modelName].push(spec);
+  }
+
+  for (const modelName in groupedSpecs) {
     const routerVarName = `${modelName.replace(/-/g, '_')}Router`;
     const camelCaseEndpoint = toCamelCase(modelName);
 
@@ -77,16 +86,17 @@ export const generatedRouters = new Map<string, Hono>();
 const ${routerVarName} = new Hono();
 `;
 
-    for (const swaggerPath in spec.paths) {
-      const pathItem = spec.paths[swaggerPath];
-      for (const method in pathItem) {
-        const operation = pathItem[method];
-        const honoPath = formatHonoPath(swaggerPath);
-        const operationId = operation.operationId;
+    for (const spec of groupedSpecs[modelName]) {
+      for (const swaggerPath in spec.paths) {
+        const pathItem = spec.paths[swaggerPath];
+        for (const method in pathItem) {
+          const operation = pathItem[method];
+          const honoPath = formatHonoPath(swaggerPath);
+          const operationId = operation.operationId;
 
-        if (!operationId) continue;
+          if (!operationId) continue;
 
-        content += `
+          content += `
 ${routerVarName}.${method}('${honoPath}', async (c) => {
   try {
     const params = {
@@ -102,6 +112,7 @@ ${routerVarName}.${method}('${honoPath}', async (c) => {
   }
 });
 `;
+        }
       }
     }
     content += `
@@ -112,17 +123,19 @@ generatedRouters.set('${modelName}', ${routerVarName});
   return content;
 }
 
+
 /**
  * Main function to generate all dynamic parts of the application.
  */
 async function generate() {
   console.log('🚀 Starting API generation...');
 
-  // Ensure generated directories exist
+  // Clean and ensure generated directories exist
+  await fs.rm(GEN_DIR, { recursive: true, force: true });
+  await fs.rm(TYPES_DIR, { recursive: true, force: true });
   await fs.mkdir(GEN_DIR, { recursive: true });
   await fs.mkdir(TYPES_DIR, { recursive: true });
   await fs.mkdir(CONFIG_DIR, { recursive: true });
-
 
   const modelDirs = await fs.readdir(MODELS_DIR);
   const allRateLimits: Record<string, RateLimitInfo> = {};
@@ -137,53 +150,60 @@ async function generate() {
 
     if (stats.isDirectory()) {
       const files = await fs.readdir(modelPath);
-      const swaggerFile = files.find(f => f.endsWith('.json'));
+      const swaggerFiles = files.filter(f => f.endsWith('.json'));
+      const modelName = dirName.replace(/-api-model$/, '').replace(/-model$/, '');
 
-      if (swaggerFile) {
-        const modelName = dirName.replace(/-api-model$/, '').replace(/-model$/, '');
+      if (swaggerFiles.length > 0) {
         console.log(`\nProcessing model: ${modelName}`);
 
-        const filePath = path.join(modelPath, swaggerFile);
-        const fileContent = await fs.readFile(filePath, 'utf-8');
-        const spec = JSON.parse(fileContent);
-        routerSpecs.push({ modelName, spec });
+        for (const swaggerFile of swaggerFiles) {
+            const filePath = path.join(modelPath, swaggerFile);
+            const fileContent = await fs.readFile(filePath, 'utf-8');
+            const spec = JSON.parse(fileContent);
+            routerSpecs.push({ modelName, spec });
 
-        // 1. Generate Types
-        const typeFileName = `${modelName.replace(/-/g, '_')}.types.ts`;
-        try {
-            await execAsync(
-                `npx swagger-typescript-api generate -p "${filePath}" -o "${TYPES_DIR}" -n "${typeFileName}" --no-client --clean-output`
-            );
-            console.log(`  - ✅ Generated types: ${typeFileName}`);
-        } catch (e) {
-            console.error(`  - ❌ Failed to generate types for ${modelName}`);
-            continue;
-        }
+            // 1. Generate Types
+            const safeModelName = modelName.replace(/-/g, '_');
+            const safeFileName = swaggerFile.replace('.json', '').replace(/-/g, '_');
+            const typeFileName = `${safeModelName}_${safeFileName}.types.ts`;
 
-        // 2. Merge paths, definitions, and tags
-        if (spec.paths) {
-          for (const pathKey in spec.paths) {
-            const apiPath = `/api/${modelName}${pathKey}`;
-            allPaths[apiPath] = spec.paths[pathKey];
-
-            const pathItem = spec.paths[pathKey];
-            for (const method in pathItem) {
-              const operation = pathItem[method];
-              if (operation.tags && operation.tags.length > 0) {
-                operation.tags.forEach((tag: string) => allTags.add(tag));
-              }
-
-              if (operation.operationId && operation.description) {
-                const rateLimit = extractRateLimit(operation.description);
-                if (rateLimit) {
-                  allRateLimits[operation.operationId] = rateLimit;
-                }
-              }
+            try {
+                await execAsync(
+                    `npx swagger-typescript-api generate -p "${filePath}" -o "${TYPES_DIR}" -n "${typeFileName}" --no-client --add-readonly`
+                );
+                console.log(`  - ✅ Generated types: ${typeFileName}`);
+            } catch (e) {
+                console.error(`  - ❌ Failed to generate types for ${modelName} from ${swaggerFile}`);
+                continue;
             }
-          }
-        }
-        if (spec.definitions) {
-            Object.assign(allDefinitions, spec.definitions);
+
+            // 2. Merge paths, definitions, and tags
+            if (spec.paths) {
+                for (const pathKey in spec.paths) {
+                    // Use a version prefix if available, otherwise default to modelName
+                    const versionPrefix = spec.basePath ? spec.basePath.split('/')[1] : modelName;
+                    const apiPath = `/api/${versionPrefix}${pathKey}`;
+                    allPaths[apiPath] = spec.paths[pathKey];
+
+                    const pathItem = spec.paths[pathKey];
+                    for (const method in pathItem) {
+                        const operation = pathItem[method];
+                        if (operation.tags && operation.tags.length > 0) {
+                            operation.tags.forEach((tag: string) => allTags.add(tag));
+                        }
+
+                        if (operation.operationId && operation.description) {
+                            const rateLimit = extractRateLimit(operation.description);
+                            if (rateLimit) {
+                                allRateLimits[operation.operationId] = rateLimit;
+                            }
+                        }
+                    }
+                }
+            }
+            if (spec.definitions) {
+                Object.assign(allDefinitions, spec.definitions);
+            }
         }
       }
     }
