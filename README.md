@@ -127,10 +127,69 @@ Once the server is running, you can access the interactive Swagger UI documentat
 
 This interface allows you to explore all available endpoints, view their parameters, and execute test requests directly from your browser.
 
+---
+
+## Deploying to Kubernetes with Helm
+
+This project includes a Helm chart for easy deployment to a Kubernetes cluster.
+
+### Prerequisites
+
+- A running Kubernetes cluster.
+- [Helm](httpss://helm.sh/docs/intro/install/) installed on your local machine.
+- A container image of this application pushed to a container registry accessible by your cluster.
+
+### Building the Docker Image
+
+First, build and push the Docker image to your container registry:
+
+```bash
+docker build -t your-registry/sp-api-wrapper:latest .
+docker push your-registry/sp-api-wrapper:latest
+```
+
+### Installing the Helm Chart
+
+To deploy the application, navigate to the project root and use the `helm install` command. You must override the `image.repository` value and provide the required secret values.
+
+1.  **Customize the Image Repository:**
+
+    Update the `charts/sp-api-wrapper/values.yaml` file, changing `image.repository` to point to your container image.
+
+    ```yaml
+    image:
+      repository: your-registry/sp-api-wrapper # CHANGE_ME
+    ```
+
+2.  **Install the Chart:**
+
+    Install the chart, providing your SP-API credentials as `--set` arguments.
+
+    ```bash
+    helm install my-release ./charts/sp-api-wrapper \
+      --set secret.SP_CLIENT_ID=your_client_id \
+      --set secret.SP_CLIENT_SECRET=your_client_secret \
+      --set secret.SP_REFRESH_TOKEN=your_refresh_token
+    ```
+
+    Replace `my-release` with a name for your Helm release.
+
+### Uninstallation
+
+To uninstall the deployment, use the `helm uninstall` command:
+
+```bash
+helm uninstall my-release
+```
+
+---
+
 ## Project Structure
 
 ```
 project/
+├── charts/                 # Helm chart for Kubernetes deployment
+│   └── sp-api-wrapper/
 ├── src/
 │   ├── routers/            # Hono routers for each SP-API model
 │   │   └── orders.ts
