@@ -93,6 +93,17 @@ SP_AWS_REGION=us-east-1
 # Application Settings
 SP_REQUEST_TIMEOUT=300000
 LOG_LEVEL=info
+API_KEY=your_secret_api_key
+```
+
+---
+
+## API Authentication
+
+All requests to the `/api/*` endpoints must be authenticated using an API key. The key must be provided in the `X-API-Key` header of each request.
+
+```
+X-API-Key: your_secret_api_key
 ```
 
 ---
@@ -163,13 +174,14 @@ To deploy the application, navigate to the project root and use the `helm instal
 
 2.  **Install the Chart:**
 
-    Install the chart, providing your SP-API credentials as `--set` arguments.
+    Install the chart, providing your SP-API credentials and API key as `--set` arguments.
 
     ```bash
     helm install my-release ./charts/sp-api-wrapper \
       --set secret.SP_CLIENT_ID=your_client_id \
       --set secret.SP_CLIENT_SECRET=your_client_secret \
-      --set secret.SP_REFRESH_TOKEN=your_refresh_token
+      --set secret.SP_REFRESH_TOKEN=your_refresh_token \
+      --set secret.API_KEY=your_secret_api_key
     ```
 
     Replace `my-release` with a name for your Helm release.

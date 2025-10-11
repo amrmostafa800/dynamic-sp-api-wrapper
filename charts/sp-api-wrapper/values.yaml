@@ -98,3 +98,4 @@ secret:
   SP_CLIENT_ID: ""
   SP_CLIENT_SECRET: ""
   SP_REFRESH_TOKEN: ""
+  API_KEY: ""

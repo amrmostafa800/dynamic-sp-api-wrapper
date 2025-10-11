@@ -5,6 +5,7 @@ import { HTTPException } from 'hono/http-exception';
 import pino from 'pino';
 
 import { config } from './config';
+import { apiKeyAuth } from './middleware/auth';
 import { generatedRouters } from './generated/routers';
 import { openApiSpec } from './generated/openapi';
 
@@ -37,6 +38,12 @@ app.onError((err, c) => {
   // Return a generic 500 error response
   return c.json({ message: 'Internal Server Error' }, 500);
 });
+
+
+// --- API Key Authentication ---
+
+// Protect all /api routes with API key authentication
+app.use('/api/*', apiKeyAuth);
 
 
 // --- Dynamically Register Routers ---
