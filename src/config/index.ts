@@ -58,6 +58,11 @@ export const config = {
      */
     level: process.env.LOG_LEVEL || 'info',
   },
+  /**
+   * The secret key for API authentication.
+   * @env API_KEY
+   */
+  apiKey: process.env.API_KEY || '',
 };
 
 // Validate that essential credentials are provided
@@ -68,5 +73,12 @@ if (
 ) {
   console.warn(
     'SP-API credentials (SP_CLIENT_ID, SP_CLIENT_SECRET, SP_REFRESH_TOKEN) are not set in the environment. API calls will likely fail.',
+  );
+}
+
+// Validate that the API key is provided
+if (!config.apiKey) {
+  console.warn(
+    'API_KEY is not set in the environment. All incoming requests will be rejected.',
   );
 }
