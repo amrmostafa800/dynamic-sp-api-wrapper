@@ -173,7 +173,7 @@ async function generate() {
                 );
                 console.log(`  - ✅ Generated types: ${typeFileName}`);
             } catch (e) {
-                console.error(`  - ❌ Failed to generate types for ${modelName} from ${swaggerFile}`);
+                console.error(`  - ❌ Failed to generate types for ${modelName} from ${swaggerFile}. Error:`, e);
                 continue;
             }
 
