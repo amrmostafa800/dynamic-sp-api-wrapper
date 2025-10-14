@@ -1,7 +1,7 @@
 # Stage 1: Builder
 # This stage installs all dependencies, including devDependencies,
 # and runs the build script.
-FROM oven/bun:1.0.25-alpine AS builder
+FROM oven/bun:alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -19,7 +19,7 @@ RUN bun run build
 
 # Stage 2: Production
 # This stage creates the final, lean production image.
-FROM oven/bun:1.0.25-alpine
+FROM oven/bun:alpine
 
 WORKDIR /usr/src/app
 
