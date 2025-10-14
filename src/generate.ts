@@ -169,7 +169,7 @@ async function generate() {
 
             try {
                 await execAsync(
-                    `npx swagger-typescript-api generate -p "${filePath}" -o "${TYPES_DIR}" -n "${typeFileName}" --no-client --add-readonly`
+                    `bunx swagger-typescript-api generate -p "${filePath}" -o "${TYPES_DIR}" -n "${typeFileName}" --no-client --add-readonly`
                 );
                 console.log(`  - ✅ Generated types: ${typeFileName}`);
             } catch (e) {

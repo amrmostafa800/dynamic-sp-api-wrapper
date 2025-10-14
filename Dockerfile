@@ -29,6 +29,9 @@ COPY --from=builder /usr/src/app/bun.lock .
 COPY --from=builder /usr/src/app/src/ src/
 COPY --from=builder /usr/src/app/node_modules/ node_modules/
 COPY --from=builder /usr/src/app/tsconfig.json .
+COPY --from=builder /usr/src/app/src/generated/ src/generated/
+COPY --from=builder /usr/src/app/src/types/ src/types/
+COPY --from=builder /usr/src/app/src/config/ src/config/
 
 # Expose the port the application will run on
 EXPOSE 3000
