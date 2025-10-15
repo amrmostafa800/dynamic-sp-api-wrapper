@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: your-repo/sp-api-wrapper # CHANGE_ME
+  repository: amrmostafa800/sp-api-wrapper
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
