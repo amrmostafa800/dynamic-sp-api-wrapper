@@ -155,8 +155,8 @@ This project includes a Helm chart for easy deployment to a Kubernetes cluster.
 First, build and push the Docker image to your container registry:
 
 ```bash
-docker build -t your-registry/sp-api-wrapper:latest .
-docker push your-registry/sp-api-wrapper:latest
+docker build -t amrmostafa800/sp-api-wrapper:latest .
+docker push amrmostafa800/sp-api-wrapper:latest
 ```
 
 ### Installing the Helm Chart
@@ -169,7 +169,7 @@ To deploy the application, navigate to the project root and use the `helm instal
 
     ```yaml
     image:
-      repository: your-registry/sp-api-wrapper # CHANGE_ME
+      repository: amrmostafa800/sp-api-wrapper
     ```
 
 2.  **Install the Chart:**
