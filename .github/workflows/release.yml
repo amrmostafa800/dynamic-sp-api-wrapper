@@ -19,7 +19,13 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
+      - name: Create gh-pages branch if it does not exist
+        run: |
+          git rev-parse --verify origin/gh-pages || git checkout --orphan gh-pages && git reset --hard && git commit --allow-empty -m "Initial gh-pages commit" && git push origin gh-pages
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.5.0
+        with:
+          charts_dir: charts
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
