@@ -161,30 +161,24 @@ docker push amrmostafa800/sp-api-wrapper:latest
 
 ### Installing the Helm Chart
 
-To deploy the application, navigate to the project root and use the `helm install` command. You must override the `image.repository` value and provide the required secret values.
+This chart is automatically released to GitHub Pages. To install it, first add the repository:
 
-1.  **Customize the Image Repository:**
+```bash
+helm repo add sp-api-wrapper https://amrmostafa800.github.io/sp-api-wrapper
+helm repo update
+```
 
-    Update the `charts/sp-api-wrapper/values.yaml` file, changing `image.repository` to point to your container image.
+Then, install the chart, providing your SP-API credentials and API key as `--set` arguments.
 
-    ```yaml
-    image:
-      repository: amrmostafa800/sp-api-wrapper
-    ```
+```bash
+helm install my-release sp-api-wrapper/sp-api-wrapper \
+  --set secret.SP_CLIENT_ID=your_client_id \
+  --set secret.SP_CLIENT_SECRET=your_client_secret \
+  --set secret.SP_REFRESH_TOKEN=your_refresh_token \
+  --set secret.API_KEY=your_secret_api_key
+```
 
-2.  **Install the Chart:**
-
-    Install the chart, providing your SP-API credentials and API key as `--set` arguments.
-
-    ```bash
-    helm install my-release ./charts/sp-api-wrapper \
-      --set secret.SP_CLIENT_ID=your_client_id \
-      --set secret.SP_CLIENT_SECRET=your_client_secret \
-      --set secret.SP_REFRESH_TOKEN=your_refresh_token \
-      --set secret.API_KEY=your_secret_api_key
-    ```
-
-    Replace `my-release` with a name for your Helm release.
+Replace `my-release` with a name for your Helm release.
 
 ### Uninstallation
 
