@@ -38,8 +38,11 @@ jobs:
 
       - name: Copy chart files to gh-pages
         run: |
-          mkdir -p .cr-release-packages
-          cp -r .cr-release-packages/* .
+          if [ -d ".cr-release-packages" ] && [ "$(ls -A .cr-release-packages)" ]; then
+            cp -r .cr-release-packages/* .
+          else
+            echo "No chart packages to copy."
+          fi
 
       - name: Commit and push changes to gh-pages
         run: |
