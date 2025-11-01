@@ -30,3 +30,19 @@ jobs:
           charts_dir: charts
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Checkout gh-pages branch
+        run: |
+          git fetch origin gh-pages
+          git checkout gh-pages
+
+      - name: Copy chart files to gh-pages
+        run: |
+          mkdir -p .cr-release-packages
+          cp -r .cr-release-packages/* .
+
+      - name: Commit and push changes to gh-pages
+        run: |
+          git add .
+          git commit -m "Update Helm chart release files" || echo "No changes to commit"
+          git push origin gh-pages
