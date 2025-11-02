@@ -70,15 +70,21 @@ app.get('/doc', (c) => {
   return c.json(openApiSpec);
 });
 
+// --- Health Check Endpoint for K8s ---
+app.get('/', (c) => c.text('OK'));
+
 
 // --- Server ---
 
-const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-log.info(`Server is running on port ${port}`);
-log.info(`Swagger UI available at http://localhost:${port}/ui`);
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const hostname = '0.0.0.0';
+
+log.info(`Server is running on http://${hostname}:${port}`);
+log.info(`Swagger UI available at http://${hostname}:${port}/ui`);
 
 export default {
   port,
+  hostname,
   fetch: app.fetch,
 };
