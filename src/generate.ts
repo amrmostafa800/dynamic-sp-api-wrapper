@@ -86,7 +86,8 @@ export const generatedRouters = new Map<string, Hono>();
 const ${routerVarName} = new Hono();
 `;
 
-    for (const spec of groupedSpecs[modelName]) {
+    const specsForModel = groupedSpecs[modelName] ?? [];
+    for (const spec of specsForModel) {
       for (const swaggerPath in spec.paths) {
         const pathItem = spec.paths[swaggerPath];
         for (const method in pathItem) {
@@ -141,6 +142,7 @@ async function generate() {
   const allRateLimits: Record<string, RateLimitInfo> = {};
   const allPaths: Record<string, any> = {};
   const allDefinitions: Record<string, any> = {};
+  const allParameters: Record<string, any> = {};
   const allTags = new Set<string>();
   const routerSpecs: { modelName: string; spec: any }[] = [];
 
@@ -204,6 +206,25 @@ async function generate() {
             if (spec.definitions) {
                 Object.assign(allDefinitions, spec.definitions);
             }
+
+            // 3. Merge top-level (global) Swagger 2.0 parameters for $ref like #/parameters/Foo
+            // Some SP-API models (e.g. Notifications) define reusable parameters at the document root.
+            if (spec.parameters) {
+              for (const [paramKey, paramValue] of Object.entries(spec.parameters)) {
+                if (!(paramKey in allParameters)) {
+                  allParameters[paramKey] = paramValue;
+                  continue;
+                }
+
+                const existing = JSON.stringify(allParameters[paramKey]);
+                const incoming = JSON.stringify(paramValue);
+                if (existing !== incoming) {
+                  console.warn(
+                    `  - ⚠️  Conflicting global parameter name '${paramKey}'. Keeping the first definition and ignoring the later one from ${modelName}/${swaggerFile}.`
+                  );
+                }
+              }
+            }
         }
       }
     }
@@ -229,6 +250,7 @@ async function generate() {
     tags: Array.from(allTags).map(tag => ({ name: tag })),
     paths: allPaths,
     definitions: allDefinitions,
+    parameters: allParameters,
     securityDefinitions: {
       ApiKeyAuth: {
         type: 'apiKey',

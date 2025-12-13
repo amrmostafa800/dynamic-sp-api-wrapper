@@ -40,3 +40,6 @@ bun-error.log*
 /src/generated/
 /src/types/
 /src/config/rate-limits.json
+
+# OS files
+run.cmd
